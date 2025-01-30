@@ -2,24 +2,23 @@
 
 import bs58 from "bs58";
 
-import { Connection, PublicKey, Keypair, SignatureResult } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair, SignatureResult, Transaction } from "@solana/web3.js";
 import { getMint } from "@solana/spl-token";
 import { SwapMode } from '@jup-ag/api';
 
 import { BlockchainProvider } from "./BlockchainProvider";
 import { getTransactionPriorityFeeEstimate } from './solana/solana';
-import { addTransactionFees, confirmTransaction, sendTransaction } from './solana/transaction.utils';
+import { addTransactionFees, checkTransactionStatus, confirmTransaction, executeLegacyTransaction, sendTransaction } from './solana/transaction.utils';
 import { buildAndSignSwapTransaction, getJupiterClient, getQuoteApi, getSwapApi } from './solana/swap.jupiter';
 
 
 
 export class SolanaProvider implements BlockchainProvider {
-    private rpcUrl: string;
     private connection: Connection;
     private signer: Keypair | null;
 
-    constructor(rpcUrl: string, privateKey?: string | undefined) {
-        this.rpcUrl = rpcUrl;
+    constructor(rpcUrl?: string, privateKey?: string | undefined) {
+        rpcUrl = rpcUrl || 'https://api.mainnet-beta.solana.com';
         this.connection = new Connection(rpcUrl, "confirmed");
 
         this.signer = privateKey ? Keypair.fromSecretKey(bs58.decode(privateKey)) : null;
@@ -51,9 +50,27 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getTransactionStatus(txHash: string): Promise<string> {
+    async executeTransaction(to: string, value: string, data: string = "0x"): Promise<string> {
+        if (! this.signer) {
+            throw new Error(`missing signer`);
+        }
+
+        const transaction = new Transaction;
+        const txId = await executeLegacyTransaction(this.connection, this.signer, transaction);
+
+        const result = await checkTransactionStatus(this.connection, txId);
+
+        if (result.err) {
+            throw new Error(result.err.toString());
+        }
+
+        return txId;
+    }
+
+
+    async getTransactionStatus(txHash: string): Promise<'processed' | 'confirmed' | 'finalized' | 'unknown'> {
         const status = await this.connection.getSignatureStatus(txHash);
-        return status.value?.confirmationStatus || "Unknown";
+        return status.value?.confirmationStatus || "unknown";
     }
 
 
