@@ -7,12 +7,12 @@ import * as bip39 from "bip39";
 import { BlockchainProvider } from "./BlockchainProvider";
 
 
-export class BitcoinProvider implements BlockchainProvider {
+export class BitcoinBlockstreamProvider implements BlockchainProvider {
     private rpcUrl: string;
     private network: bitcoin.networks.Network | null = null;
     private keyPair: /* bitcoin.ECPair.ECPairInterface */ any | null = null;
 
-    constructor(mnemonic=null) {
+    constructor(mnemonic?: string) {
         this.rpcUrl = 'https://blockstream.info/api'; // URL de l'API Bitcoin RPC ou service tiers
 
         if (mnemonic) {
@@ -24,16 +24,19 @@ export class BitcoinProvider implements BlockchainProvider {
         }
     }
 
+
     getConnection() {
         return null;
     }
+
 
     async getWalletAddress(): Promise<string> {
         return ''; // TODO
     }
 
+
     // Récupérer la balance d'une adresse Bitcoin
-    async getBalance(address: string, formatDecimals=true): Promise<number> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         try {
             const response = await axios.get(`${this.rpcUrl}/address/${address}`);
             //console.log("data:", response.data); // Afficher les données pour déboguer si nécessaire
@@ -44,10 +47,10 @@ export class BitcoinProvider implements BlockchainProvider {
             const balanceInSatoshis = funded - spent;
 
             if (! formatDecimals) {
-                return balanceInSatoshis;
+                return BigInt(balanceInSatoshis) as BigInt as T extends true ? never : BigInt;
             }
 
-            return balanceInSatoshis / 1e8; // Convertir en BTC
+            return balanceInSatoshis / 1e8 as T extends true ? number : never; // Convertir en BTC
 
         } catch (error) {
             console.error("Error fetching Bitcoin balance:", error);
@@ -55,31 +58,6 @@ export class BitcoinProvider implements BlockchainProvider {
         }
     }
 
-    // Non applicable pour Bitcoin natif (remplissage minimal pour respecter l'interface)
-    async getTokenBalance(address: string, tokenAddress: string, formatDecimals=true): Promise<number> {
-        console.warn("Tokens are not supported on Bitcoin natively.");
-        return 0;
-    }
-
-    async getTokenPrice(tokenAddress: string): Promise<number> {
-        console.warn("Tokens are not supported on Bitcoin natively.");
-        return 0;
-    }
-
-
-    // Récupérer le statut d'une transaction
-    async getTransactionStatus(txHash: string): Promise<string> {
-        try {
-            const response = await axios.get(`${this.rpcUrl}/tx/${txHash}`);
-            const confirmations = response.data.confirmations;
-
-            if (confirmations > 0) return "Success";
-            return "Pending";
-        } catch (error) {
-            console.error("Error fetching transaction status:", error);
-            throw new Error("Failed to fetch transaction status");
-        }
-    }
 
     async executeTransaction(to: string, value: string): Promise<string> {
         if (! this.keyPair || ! this.network) {
@@ -145,6 +123,52 @@ export class BitcoinProvider implements BlockchainProvider {
             throw error;
         }
     }
+
+
+    // Récupérer le statut d'une transaction
+    async getTransactionStatus(txHash: string): Promise<string> {
+        try {
+            const response = await axios.get(`${this.rpcUrl}/tx/${txHash}`);
+            const confirmations = response.data.confirmations;
+
+            if (confirmations > 0) return "Success";
+            return "Pending";
+        } catch (error) {
+            console.error("Error fetching transaction status:", error);
+            throw new Error("Failed to fetch transaction status");
+        }
+    }
+
+
+    getWrappedToken() {
+        console.warn("Tokens are not supported on Bitcoin natively.");
+        return '';
+    }
+
+
+    getWrappedTokenUsdPair() {
+        console.warn("Tokens are not supported on Bitcoin natively.");
+        return '';
+    }
+
+
+    // Non applicable pour Bitcoin natif (remplissage minimal pour respecter l'interface)
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+        console.warn("Tokens are not supported on Bitcoin natively.");
+        return 0 as T extends true ? number : never;
+    }
+
+
+    async getTokensPairPrice(pairAddress: string): Promise<number> {
+        console.warn("Tokens are not supported on Bitcoin natively.");
+        return 0;
+    }
+
+    async getTokenPrice(tokenAddress: string): Promise<number> {
+        console.warn("Tokens are not supported on Bitcoin natively.");
+        return 0;
+    }
+
 
     async swapTokens(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: string): Promise<string> {
         return '';

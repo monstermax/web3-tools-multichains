@@ -41,7 +41,7 @@ export class TronProvider implements BlockchainProvider {
     private connection: TronWeb;
     private signer: string | null = null;
 
-    constructor(rpcUrl: string, privateKey?: string) {
+    constructor(rpcUrl?: string, privateKey?: string) {
         const fullNodeUrl = rpcUrl || "https://api.trongrid.io";
         const eventServerUrl = rpcUrl || "https://api.trongrid.io";
         const solidityNodeUrl = rpcUrl || "https://api.trongrid.io";
@@ -79,35 +79,55 @@ export class TronProvider implements BlockchainProvider {
 
 
     // Obtenir le solde TRX d'une adresse
-    async getBalance(address: string, formatDecimals = true): Promise<number> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         try {
             const balance = await this.connection.trx.getBalance(address);
 
             if (!formatDecimals) {
-                return balance;
+                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
             }
 
-            return balance / 1e6; // Convertir en TRX (6 décimales)
+            return balance / 1e6 as T extends true ? number : never; // Convertir en TRX (6 décimales)
 
         } catch (error) {
             console.error("Error fetching TRX balance:", error);
-            return 0;
+            return 0 as T extends true ? number : never;
         }
     }
 
 
-    // Obtenir la balance TRC-20 d'une adresse pour un token donné
-    async getTokenBalance(address: string, tokenAddress: string, formatDecimals = true): Promise<number> {
+    async executeTransaction(to: string, value: string): Promise<string> {
         try {
-            const contract = await this.connection.contract().at(tokenAddress);
-            const decimals = await contract.decimals().call();
-            const rawBalance = await contract.balanceOf(address).call();
+            if (!this.signer) {
+                throw new Error("Signer non initialisé. Impossible d'envoyer une transaction.");
+            }
 
-            return parseFloat(rawBalance) / Math.pow(10, decimals);
+            // Convertir la valeur en Sun (1 TRX = 1e6 Sun)
+            const amountInSun = this.connection.toSun(Number(value));
+
+            // Construire la transaction
+            const transaction = await this.connection.transactionBuilder.sendTrx(
+                to, // Adresse du destinataire
+                Number(amountInSun), // Montant en Sun
+                this.signer // Adresse de l'expéditeur (dérivée de la clé privée)
+            );
+
+            // Signer la transaction
+            const signedTransaction = await this.connection.trx.sign(transaction);
+
+            // Envoyer la transaction sur le réseau Tron
+            const broadcast = await this.connection.trx.sendRawTransaction(signedTransaction);
+
+            if (broadcast.result) {
+                console.log("Transaction envoyée. TX Hash:", broadcast.txid);
+                return broadcast.txid; // Retourne l'ID de la transaction
+            } else {
+                throw new Error("La transaction n'a pas été acceptée par le réseau.");
+            }
 
         } catch (error) {
-            console.error("Error fetching TRC-20 token balance:", error);
-            return 0;
+            console.error("Erreur lors de l'exécution de la transaction sur Tron:", error);
+            return "";
         }
     }
 
@@ -125,8 +145,43 @@ export class TronProvider implements BlockchainProvider {
     }
 
 
+    getWrappedToken() {
+        return 'TT2Yb5hZgA1S3dEmKaSAgLxUz4JxcqmeAe'; // WTRX
+    }
+
+
+    getWrappedTokenUsdPair() {
+        return 'TFGDbUyP8xez44C76fin3bn3Ss6jugoUwJ'; // TRON/USDT
+    }
+
+
+    // Obtenir la balance TRC-20 d'une adresse pour un token donné
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+        try {
+            const contract = await this.connection.contract().at(tokenAddress);
+            const decimals = await contract.decimals().call();
+            const rawBalance = await contract.balanceOf(address).call();
+
+            if (! formatDecimals) {
+                return BigInt(rawBalance) as BigInt as T extends true ? never : BigInt;
+            }
+
+            return parseFloat(rawBalance) / Math.pow(10, decimals) as T extends true ? number : never;
+
+        } catch (error) {
+            console.error("Error fetching TRC-20 token balance:", error);
+            return 0 as T extends true ? number : never;
+        }
+    }
+
+
     // Obtenir le prix d'un token (TRX ou TRC-20)
-    async getTokenPrice(pairAddress: string): Promise<number> {
+    async getTokenPrice(tokenAddress: string): Promise<number> {
+        throw new Error('not available');
+    }
+
+
+    async getTokensPairPrice(pairAddress: string): Promise<number> {
         try {
             // Charger le contrat LP
             const lpContract = await this.connection.contract(LP_ABI, pairAddress);
@@ -169,42 +224,6 @@ export class TronProvider implements BlockchainProvider {
         } catch (error) {
             console.error("Error fetching token price on Tron:", error);
             return 0;
-        }
-    }
-
-
-    async executeTransaction(to: string, value: string): Promise<string> {
-        try {
-            if (!this.signer) {
-                throw new Error("Signer non initialisé. Impossible d'envoyer une transaction.");
-            }
-
-            // Convertir la valeur en Sun (1 TRX = 1e6 Sun)
-            const amountInSun = this.connection.toSun(Number(value));
-
-            // Construire la transaction
-            const transaction = await this.connection.transactionBuilder.sendTrx(
-                to, // Adresse du destinataire
-                Number(amountInSun), // Montant en Sun
-                this.signer // Adresse de l'expéditeur (dérivée de la clé privée)
-            );
-
-            // Signer la transaction
-            const signedTransaction = await this.connection.trx.sign(transaction);
-
-            // Envoyer la transaction sur le réseau Tron
-            const broadcast = await this.connection.trx.sendRawTransaction(signedTransaction);
-
-            if (broadcast.result) {
-                console.log("Transaction envoyée. TX Hash:", broadcast.txid);
-                return broadcast.txid; // Retourne l'ID de la transaction
-            } else {
-                throw new Error("La transaction n'a pas été acceptée par le réseau.");
-            }
-
-        } catch (error) {
-            console.error("Erreur lors de l'exécution de la transaction sur Tron:", error);
-            return "";
         }
     }
 

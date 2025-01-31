@@ -17,7 +17,7 @@ export class SolanaProvider implements BlockchainProvider {
     private connection: Connection;
     private signer: Keypair | null;
 
-    constructor(rpcUrl?: string, privateKey?: string | undefined) {
+    constructor(rpcUrl?: string, privateKey?: string) {
         rpcUrl = rpcUrl || 'https://api.mainnet-beta.solana.com';
         this.connection = new Connection(rpcUrl, "confirmed");
 
@@ -38,15 +38,16 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getBalance(address: string, formatDecimals=true): Promise<number> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         const publicKey = new PublicKey(address);
+
         const balance = await this.connection.getBalance(publicKey);
 
         if (!formatDecimals) {
-            return balance;
+            return BigInt(balance) as BigInt as T extends true ? never : BigInt;
         }
 
-        return balance / 1e9; // Convert lamports to SOL
+        return balance / 1e9 as T extends true ? number : never; // Convert lamports to SOL
     }
 
 
@@ -74,7 +75,17 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getTokenBalance(address: string, baseTokenddress: string, formatDecimals=false): Promise<number> {
+    getWrappedToken() {
+        return 'So11111111111111111111111111111111111111112'; // WSOL
+    }
+
+
+    getWrappedTokenUsdPair() {
+        return '';
+    }
+
+
+    async getTokenBalance<T extends boolean>(address: string, baseTokenddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         const walletPublicKey = new PublicKey(address);
         const tokenMintPublicKey = new PublicKey(baseTokenddress);
 
@@ -86,7 +97,7 @@ export class SolanaProvider implements BlockchainProvider {
             );
 
             if (baseTokenccounts.value.length === 0) {
-                return 0; // Aucun compte trouvé pour ce token
+                return 0 as T extends true ? number : never; // Aucun compte trouvé pour ce token
             }
 
             // Extraire la balance du premier compte
@@ -94,18 +105,18 @@ export class SolanaProvider implements BlockchainProvider {
             const balance = this.parseTokenBalance(accountData);
 
             if (!formatDecimals) {
-                return balance;
+                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
             }
 
             // Récupérer les informations sur le mint pour obtenir les décimales
             const mintInfo = await getMint(this.connection, tokenMintPublicKey);
             const decimals = mintInfo.decimals;
 
-            return balance / 10 ** decimals;
+            return balance / 10 ** decimals as T extends true ? number : never;
 
         } catch (err: any) {
             console.error("Error fetching token balance:", err);
-            return 0;
+            return 0 as T extends true ? number : never;
         }
     }
 
@@ -115,7 +126,16 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getTokenPrice(pairAddress: string, inverseAssets = false): Promise<number> {
+    async getTokenPrice(tokenAddress: string, inverseAssets = false): Promise<number> {
+        const jupiterApi = getJupiterClient();
+        const outputMint = this.getWrappedToken();
+        const amount = 1; // 1 SOL
+        const quote = await getQuoteApi(jupiterApi, tokenAddress, outputMint, amount);
+        return Number(quote?.swapUsdValue) || 0;
+    }
+
+
+    async getTokensPairPrice(pairAddress: string, inverseAssets = false): Promise<number> {
         const lpPublicKey = new PublicKey(pairAddress);
         const accountInfo = await this.connection.getAccountInfo(lpPublicKey);
 

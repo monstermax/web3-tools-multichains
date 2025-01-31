@@ -26,6 +26,8 @@ export class TonProvider implements BlockchainProvider {
         try {
             // Convertir la clé privée en Uint8Array
             const keyBuffer = Buffer.from(privateKey, "hex");
+
+            //const keyPair = privateKey.includes(' ') ? await mnemonicToKeyPair(mnemonic.split(' ')) : TonWeb.utils.nacl.sign.keyPair.fromSeed(keyBuffer);
             const keyPair = TonWeb.utils.nacl.sign.keyPair.fromSeed(keyBuffer);
 
             // Définir le type de wallet (ici Wallet V3)
@@ -67,83 +69,20 @@ export class TonProvider implements BlockchainProvider {
 
 
     // Obtenir le solde d'une adresse TON
-    async getBalance(address: string, formatDecimals = true): Promise<number> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         try {
             const wallet = this.connection.wallet.create({ address });
             const balance = await this.connection.getBalance(wallet.address ?? '');
 
             if (!formatDecimals) {
-                return Number(balance);
+                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
             }
 
-            return Number(balance) / 1e9; // Convertir en TON
+            return Number(balance) / 1e9 as T extends true ? number : never; // Convertir en TON
 
         } catch (error) {
             console.error("Error fetching TON balance:", error);
-            return 0;
-        }
-    }
-
-
-    // Méthode pour récupérer le solde d'un token TIP-3
-    async getTokenBalance(address: string, tokenAddress: string, formatDecimals = true): Promise<number> {
-        try {
-            const result = await this.connection.provider.call2(
-                tokenAddress,  // Adresse du contrat
-                'getBalance',  // Nom de la méthode
-                [['address', address]]  // Paramètres sous forme de tuple
-            );
-
-            const balance = parseInt(result.stack[0][1], 10);
-            return formatDecimals ? balance / 1e9 : balance;
-
-        } catch (error) {
-            console.error("Error fetching token balance on TON:", error);
-            return 0;
-        }
-    }
-
-
-    // Statut d'une transaction
-    async getTransactionStatus(txHash: string): Promise<string> {
-        try {
-            const txInfo = await this.connection.provider.call2(
-                txHash, // Adresse de la transaction
-                'getStatus',
-                []
-            );
-
-            return txInfo.stack[0][1] === '1' ? "Confirmed" : "Pending";
-
-        } catch (error) {
-            console.error("Error fetching transaction status:", error);
-            return "Unknown";
-        }
-    }
-
-
-    // Prix du token (par exemple : TON/USD)
-    async getTokenPrice(pairAddress: string): Promise<number> {
-        try {
-            // Récupérer les adresses des tokens du pool
-            const tokenData = await this.connection.provider.call2(pairAddress, 'getTokens', []);
-            const token0Address = tokenData.stack[0][1];
-            const token1Address = tokenData.stack[1][1];
-
-            // Récupérer les réserves
-            const reservesData = await this.connection.provider.call2(pairAddress, 'getReserves', []);
-            const reserve0 = parseInt(reservesData.stack[0][1], 10);
-            const reserve1 = parseInt(reservesData.stack[1][1], 10);
-
-            // Conversion en décimales (supposons 9 décimales par défaut)
-            const adjustedReserve0 = reserve0 / 1e9;
-            const adjustedReserve1 = reserve1 / 1e9;
-
-            return adjustedReserve1 / adjustedReserve0;
-
-        } catch (error) {
-            console.error("Error fetching LP token price:", error);
-            return 0;
+            return 0 as T extends true ? number : never;
         }
     }
 
@@ -174,6 +113,90 @@ export class TonProvider implements BlockchainProvider {
         } catch (error) {
             console.error("Erreur lors de l'exécution de la transaction sur TON:", error);
             return "";
+        }
+    }
+
+
+    // Statut d'une transaction
+    async getTransactionStatus(txHash: string): Promise<string> {
+        try {
+            const txInfo = await this.connection.provider.call2(
+                txHash, // Adresse de la transaction
+                'getStatus',
+                []
+            );
+
+            return txInfo.stack[0][1] === '1' ? "Confirmed" : "Pending";
+
+        } catch (error) {
+            console.error("Error fetching transaction status:", error);
+            return "Unknown";
+        }
+    }
+
+
+    getWrappedToken() {
+        return 'EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO'; // WTON
+    }
+
+
+    getWrappedTokenUsdPair() {
+        return '';
+    }
+
+
+    // Méthode pour récupérer le solde d'un token TIP-3
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+        try {
+            const result = await this.connection.provider.call2(
+                tokenAddress,  // Adresse du contrat
+                'getBalance',  // Nom de la méthode
+                [['address', address]]  // Paramètres sous forme de tuple
+            );
+
+            const balance = parseInt(result.stack[0][1], 10);
+
+            if (! formatDecimals) {
+                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+            }
+
+            return balance / 1e9 as T extends true ? number : never;
+
+        } catch (error) {
+            console.error("Error fetching token balance on TON:", error);
+            return 0 as T extends true ? number : never;
+        }
+    }
+
+
+
+    // Prix du token (par exemple : TON/USD)
+    async getTokenPrice(tokenAddress: string): Promise<number> {
+        throw new Error('not available');
+    }
+
+
+    async getTokensPairPrice(pairAddress: string): Promise<number> {
+        try {
+            // Récupérer les adresses des tokens du pool
+            const tokenData = await this.connection.provider.call2(pairAddress, 'getTokens', []);
+            const token0Address = tokenData.stack[0][1];
+            const token1Address = tokenData.stack[1][1];
+
+            // Récupérer les réserves
+            const reservesData = await this.connection.provider.call2(pairAddress, 'getReserves', []);
+            const reserve0 = parseInt(reservesData.stack[0][1], 10);
+            const reserve1 = parseInt(reservesData.stack[1][1], 10);
+
+            // Conversion en décimales (supposons 9 décimales par défaut)
+            const adjustedReserve0 = reserve0 / 1e9;
+            const adjustedReserve1 = reserve1 / 1e9;
+
+            return adjustedReserve1 / adjustedReserve0;
+
+        } catch (error) {
+            console.error("Error fetching LP token price:", error);
+            return 0;
         }
     }
 

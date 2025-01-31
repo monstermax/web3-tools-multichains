@@ -1,12 +1,12 @@
 
-export { rpcConfig } from './rpc.default';
+export { rpcDefault } from './rpc.default';
 
-export { BlockchainProvider } from './blockchains/BlockchainProvider';
+export { BlockchainProvider, getBlockchainProvider, ChainName, BlockchainProviderOptions } from './blockchains/BlockchainProvider';
 
-export { EvmProvider } from './blockchains/EvmProvider';
+export { EvmProvider, EvmChainName } from './blockchains/EvmProvider';
 
-export { BitcoinProvider as BitcoinCoreProvider } from './blockchains/BitcoinProvider.bitcoin-core';
-export { BitcoinProvider as BitcoinBlockstreamProvider } from './blockchains/BitcoinProvider.blockstream';
+export { BitcoinCoreProvider as BitcoinCoreProvider } from './blockchains/BitcoinProvider.bitcoin-core';
+export { BitcoinBlockstreamProvider as BitcoinBlockstreamProvider } from './blockchains/BitcoinProvider.blockstream';
 
 export { SolanaProvider } from './blockchains/SolanaProvider';
 export * as solana from './blockchains/solana/solana';

@@ -1,37 +1,40 @@
 // EvmProvider.ts
 
-import { JsonRpcProvider, formatEther, formatUnits, parseEther, Contract, Wallet } from "ethers";
+import { JsonRpcProvider, formatEther, formatUnits, parseEther, Contract, Wallet, parseUnits } from "ethers";
 
 import { BlockchainProvider } from "./BlockchainProvider";
+import { rpcDefault } from "../rpc.default";
 
 
-type EvmChainName = keyof typeof rpcUrls;
+export type EvmChainName = keyof typeof rpcUrls;
 
+
+// https://docs.uniswap.org/contracts/v2/reference/smart-contracts/pair
 const LP_ABI = [
     {
-      constant: true,
-      inputs: [],
-      name: "getReserves",
-      outputs: [
-        { name: "_reserve0", type: "uint112" },
-        { name: "_reserve1", type: "uint112" },
-        { name: "_blockTimestampLast", type: "uint32" },
-      ],
-      type: "function",
+        constant: true,
+        inputs: [],
+        name: "getReserves",
+        outputs: [
+            { name: "reserve0", type: "uint112" },
+            { name: "reserve1", type: "uint112" },
+            { name: "blockTimestampLast", type: "uint32" },
+        ],
+        type: "function",
     },
     {
-      constant: true,
-      inputs: [],
-      name: "token0",
-      outputs: [{ name: "", type: "address" }],
-      type: "function",
+        constant: true,
+        inputs: [],
+        name: "token0",
+        outputs: [{ name: "", type: "address" }],
+        type: "function",
     },
     {
-      constant: true,
-      inputs: [],
-      name: "token1",
-      outputs: [{ name: "", type: "address" }],
-      type: "function",
+        constant: true,
+        inputs: [],
+        name: "token1",
+        outputs: [{ name: "", type: "address" }],
+        type: "function",
     },
 ];
 
@@ -41,20 +44,61 @@ const erc20Abi = [
     "function decimals() view returns (uint8)",
 ];
 
+
 const rpcUrls = {
-    'ethereum': "https://rpc.ankr.com/eth",
-    'bsc': "https://bsc-dataseed1.binance.org/",
-    'fantom': "https://rpcapi.fantom.network",
-    'polygon': "https://polygon-rpc.com/",
-    'avalanche': "https://api.avax.network/ext/bc/C/rpc",
+    'ethereum': rpcDefault.ethereum.publicnode,
+    'bsc': rpcDefault.bsc.publicnode,
+    'fantom': rpcDefault.fantom.publicnode,
+    'polygon': rpcDefault.polygon.publicnode,
+    'avalanche': rpcDefault.avalanche.publicnode,
+    'base': rpcDefault.base.publicnode,
+    'arbitrum': rpcDefault.arbitrum.publicnode,
+    'optimism': rpcDefault.optimism.publicnode,
 };
 
-const dexes: {[chainName: string]: string} = {
-    'ethereum': 'uniswap',
-    'bsc': 'pancakeswap',
-    'fantom': 'spookyswap',
-    'polygon': 'quickswap',
-    'avalanche': 'traderjoe',
+
+const dexesRouters: { [chainName: string]: string } = {
+    'ethereum': '', // uniswap
+    'bsc': '0x10ED43C718714eb63d5aA57B78B54704E256024E', // PancakeSwap: Router v2
+    'fantom': '', // spookyswap
+    'polygon': '', // quickswap
+    'avalanche': '', // traderjoe
+    'base': '', // aerodrome
+}
+
+
+const dexesFactories: { [chainName: string]: string } = {
+    'ethereum': '', // uniswap
+    'bsc': '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73', // PancakeSwap: Factory v2
+    'fantom': '', // spookyswap
+    'polygon': '', // quickswap
+    'avalanche': '', // traderjoe
+    'base': '', // aerodrome OR uniswap
+    'arbitrum': '', // uniswap OR camelot
+    'optimism': '', // velodrome OR uniswap
+}
+
+
+const wrappedCoins: { [chainName: string]: string } = {
+    'ethereum': '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // WETH
+    'bsc': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', // WBNB
+    'fantom': '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83', // WFTM
+    'polygon': '0x95999f8580b6fb0293c86c055dd49bcfbf0c5c45', // WPOL
+    'avalanche': '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7', // WAVAX
+    'base': '0x4200000000000000000000000000000000000006', // WETH
+    'arbitrum': '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', // WETH
+    'optimism': '0x4200000000000000000000000000000000000006', // WETH
+}
+
+const wrappedCoinsUsdPair: { [chainName: string]: string } = {
+    'ethereum': '', // WETH
+    'bsc': '0xd99c7f6c65857ac913a8f880a4cb84032ab2fc5b', // WBNB/USDC
+    'fantom': '0x68FD6F4dBEe83C0A2259Cb291d1409d140033e6f', // USDC.e/WFTM
+    'polygon': '0xB6e57ed85c4c9dbfEF2a68711e9d6f36c56e0FcB', // USDC/WPOL
+    'avalanche': '0xfAe3f424a0a47706811521E3ee268f00cFb5c45E', // WAVAX/USDC
+    'base': '', // WETH
+    'arbitrum': '', // WETH
+    'optimism': '', // WETH
 }
 
 
@@ -63,12 +107,12 @@ export class EvmProvider implements BlockchainProvider {
     private signer: Wallet | null;
     private chainName: string;
 
-    constructor(chainName: EvmChainName, rpcUrl?: string, privateKey=null) {
+    constructor(chainName: EvmChainName, rpcUrl?: string, privateKey?: string) {
         this.chainName = chainName;
 
         rpcUrl = rpcUrl || rpcUrls[chainName];
 
-        if (! rpcUrl) {
+        if (!rpcUrl) {
             throw new Error(`No RPC Url for chain ${chainName}`);
         }
 
@@ -88,19 +132,19 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async getBalance(address: string, formatDecimals=true): Promise<number> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         const balance = await this.connection.getBalance(address);
 
-        if (! formatDecimals) {
-            return Number(balance);
+        if (!formatDecimals) {
+            return BigInt(balance) as BigInt as T extends true ? never : BigInt;
         }
 
-        return parseFloat(formatEther(balance)); // Conversion en ETH
+        return parseFloat(formatEther(balance)) as T extends true ? number : never; // Conversion en ETH
     }
 
 
     async executeTransaction(to: string, value: string, data: string = "0x"): Promise<string> {
-        if (! this.signer) {
+        if (!this.signer) {
             throw new Error(`missing signer`);
         }
 
@@ -131,7 +175,19 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async getTokenBalance(address: string, tokenAddress: string, formatDecimals=true): Promise<number> {
+    getWrappedToken() {
+        const tokenAddress = wrappedCoins[this.chainName];
+        return tokenAddress;
+    }
+
+
+    getWrappedTokenUsdPair() {
+        const pairAddress = wrappedCoinsUsdPair[this.chainName];
+        return pairAddress;
+    }
+
+
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
         const contract = new Contract(tokenAddress, erc20Abi, this.connection);
 
         const [rawBalance, decimals] = await Promise.all([
@@ -139,12 +195,22 @@ export class EvmProvider implements BlockchainProvider {
             contract.decimals(),
         ]);
 
+        if (!formatDecimals) {
+            return BigInt(rawBalance) as BigInt as T extends true ? never : BigInt;
+        }
+
         // Convertir en unité lisible
-        return parseFloat(formatUnits(rawBalance, decimals));
+        return parseFloat(formatUnits(rawBalance, decimals)) as T extends true ? number : never;
     }
 
 
-    async getTokenPrice(pairAddress: string, inverseAssets=false): Promise<number> {
+
+    async getTokenPrice(tokenAddress: string): Promise<number> {
+        throw new Error('not available');
+    }
+
+
+    async getTokensPairPrice(pairAddress: string, inverseAssets = false): Promise<number> {
         // Exemple avec un pool Uniswap V2
         const lpContract = new Contract(pairAddress, LP_ABI, this.connection);
 
@@ -175,8 +241,50 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async swapTokens(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: string): Promise<string> {
-        const dex = dexes[this.chainName]
-        return ''; // TODO: uniswap + pancakeswap + quickswap + spookyswap + traderjoe
+    async swapTokens(buyToken: string, sellToken: string, amountIn: number, slippage: number, swapMode: string): Promise<string> {
+        const routerAddress = dexesRouters[this.chainName];
+
+        if (!routerAddress) {
+            throw new Error(`no router found for swap`);
+        }
+
+        const provider = this.connection;
+        const account = await provider.getSigner();
+
+        const routerContract = new Contract(
+            routerAddress,
+            [
+                'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)',
+                'function swapExactTokensForTokens( uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)',
+            ],
+            account
+        );
+
+        //const amountIn = parseUnits('0.1', 'ether'); //ether is the measurement, not the coin
+        const amounts = await routerContract.getAmountsOut(amountIn, [buyToken, sellToken]);
+
+        const amountOutMin = amounts[1].sub(amounts[1].div(10)); // math for Big numbers in JS
+
+        //        console.log(`
+        //~~~~~~~~~~~~~~~~~~~~
+        //Buying new token
+        //~~~~~~~~~~~~~~~~~~~~
+        //buyToken: ${amountIn.toString()} ${buyToken} (WBNB)
+        //sellToken: ${amountOutMin.toString()} ${sellToken}
+        //`);
+
+        const tx = await routerContract.swapExactTokensForTokens(
+            amountIn,
+            amountOutMin,
+            [buyToken, sellToken],
+            account.address,
+            Date.now() + 1000 * 60 * 5 // 5 minutes
+        );
+        const receipt = await tx.wait();
+
+        console.log('Transaction receipt');
+        console.log(receipt);
+
+        return receipt.transactionHash;
     }
 }
