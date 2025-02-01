@@ -127,6 +127,8 @@ export class SolanaProvider implements BlockchainProvider {
 
 
     async getTokenPrice(tokenAddress: string, inverseAssets = false): Promise<number> {
+        //   const url = `https://defi.shyft.to/v0/pools/get_by_pair?tokenA=${address}&tokenB=sol`;
+
         const jupiterApi = getJupiterClient();
         const outputMint = this.getWrappedToken();
         const amount = 1; // 1 SOL
