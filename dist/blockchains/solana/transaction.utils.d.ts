@@ -1,0 +1,11 @@
+import { Commitment } from "@solana/web3.js";
+import { Connection, Keypair, SignatureResult, Transaction, VersionedTransaction } from "@solana/web3.js";
+import type { LatestBlockhash } from "./solana.types";
+export declare function simulateTransaction(connection: Connection, transaction: VersionedTransaction): Promise<number | null>;
+export declare function executeLegacyTransaction(connection: Connection, wallet: Keypair, transaction: Transaction): Promise<string>;
+export declare function sendTransaction(connection: Connection, transaction: VersionedTransaction): Promise<string>;
+export declare function checkTransactionStatus(connection: Connection, txid: string): Promise<SignatureResult>;
+export declare function confirmTransaction(connection: Connection, txid: string, latestBlockhash: LatestBlockhash, commitment?: Commitment): Promise<SignatureResult>;
+export declare function signSendAndConfirm(connection: Connection, txData: ArrayBuffer, signer: Keypair): Promise<string>;
+export declare function sendAndConfirmTransaction(connection: Connection, tx: VersionedTransaction): Promise<string>;
+export declare function addTransactionFees(connection: Connection, wallet: Keypair, transaction: VersionedTransaction, priorityFeeMicroLamports: number): Promise<void>;

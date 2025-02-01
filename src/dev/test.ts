@@ -1,7 +1,7 @@
 
-import { EvmProvider } from "./blockchains/EvmProvider";
-import { SolanaProvider } from "./blockchains/SolanaProvider";
-import { rpcDefault } from "./rpc.default";
+import { EvmProvider } from "../blockchains/EvmProvider";
+import { SolanaProvider } from "../blockchains/SolanaProvider";
+import { rpcDefault } from "../rpc.default";
 
 
 async function main() {

@@ -121,6 +121,48 @@ export async function confirmTransaction(connection: Connection, txid: string, l
 
 
 
+export async function signSendAndConfirm(connection: Connection, txData: ArrayBuffer, signer: Keypair): Promise<string> {
+    const tx = VersionedTransaction.deserialize(new Uint8Array(txData));
+    tx.sign([signer]);
+    //console.log("   ✅ - Transaction Signed");
+
+    return await sendAndConfirmTransaction(connection, tx);
+}
+
+
+export async function sendAndConfirmTransaction(connection: Connection, tx: VersionedTransaction): Promise<string> {
+    const signature = await connection.sendRawTransaction(tx.serialize(), {
+        maxRetries: 10,
+        skipPreflight: true,
+    });
+    console.log("   ✅ - Transaction sent to network");
+
+    let tries = 10;
+
+    while (tries-- >= 0) {
+        const status = await connection.getSignatureStatus(signature);
+
+        if (status?.value?.confirmationStatus === "confirmed") {
+            console.log(
+                "🎉 Transaction Succesfully Confirmed!",
+                "\n",
+                `https://solscan.io/tx/${signature}`
+            );
+            return signature;
+        }
+
+        console.log("   ⏳ - Waiting for transaction confirmation...");
+
+        // wait 10 seconds
+        await new Promise((resolve) => setTimeout(resolve, 10_000));
+    }
+
+    console.log("   ❌ - Transaction not confirmed.");
+    return signature;
+}
+
+
+
 export async function addTransactionFees(connection: Connection, wallet: Keypair, transaction: VersionedTransaction, priorityFeeMicroLamports: number) {
     // Notes (à revoir) :
     // - un swap jupiter doit contenir l'instruction suivante { computeUnitPriceMicroLamports: 0 } pour empecher que Jupiter n'ajoute les frais lui-meme

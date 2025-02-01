@@ -1,0 +1,11 @@
+import { Keypair, VersionedTransaction } from "@solana/web3.js";
+import { DefaultApi, QuoteGetRequest, QuoteResponse, SwapMode as swapMode, SwapResponse } from '@jup-ag/api';
+import { LatestBlockhash } from "./solana.types";
+export declare function getJupiterClient(): DefaultApi;
+export declare function getQuoteRequest(inputMint: string, outputMint: string, amount: number, slippageBps?: number, swapMode?: swapMode): QuoteGetRequest;
+export declare function getQuoteCurl(inputMint: string, outputMint: string, amount: number, slippageBps?: number, swapMode?: swapMode): Promise<QuoteResponse | null>;
+export declare function getQuoteCurlAlt(inputMint: string, outputMint: string, amount: number, slippageBps?: number, swapMode?: swapMode): Promise<QuoteResponse | null>;
+export declare function getQuoteApi(jupiterApi: DefaultApi, inputMint: string, outputMint: string, amount: number, slippageBps?: number, swapMode?: swapMode): Promise<QuoteResponse | null>;
+export declare function getSwapCurl(quoteResponse: QuoteResponse, payer: Keypair, latestBlockhash?: LatestBlockhash): Promise<SwapResponse | null>;
+export declare function getSwapApi(jupiterApi: DefaultApi, quoteResponse: QuoteResponse, payer: Keypair, latestBlockhash?: LatestBlockhash): Promise<SwapResponse | null>;
+export declare function buildAndSignSwapTransaction(wallet: Keypair, swapResponse: SwapResponse, latestBlockhash?: LatestBlockhash): VersionedTransaction;

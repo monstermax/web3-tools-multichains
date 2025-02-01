@@ -90,6 +90,8 @@ export class SolanaProvider implements BlockchainProvider {
         const tokenMintPublicKey = new PublicKey(baseTokenddress);
 
         try {
+            // TODO: utiliser getParsedTokenAccountsByOwner => voir https://github.com/Fn0skig/pump.fun/blob/main/market/token.ts
+
             // Rechercher le compte SPL Token associé à l'adresse et au mint
             const baseTokenccounts = await this.connection.getTokenAccountsByOwner(
                 walletPublicKey,

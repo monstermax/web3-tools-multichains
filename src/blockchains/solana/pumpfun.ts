@@ -5,28 +5,18 @@ import axios from "axios";
 import WebSocket from "ws";
 import bs58 from "bs58";
 import { Connection, Keypair, VersionedTransaction } from "@solana/web3.js";
+import { sendAndConfirmTransaction } from "./transaction.utils";
 
 
-// https://pumpportal.fun/data-api/real-time
-// https://github.com/thetateman/Pump-Fun-API
-
-// https://blogs.shyft.to/how-to-track-token-transfers-from-pump-fun-to-raydium-5ada83c2ac58
-// https://github.com/Shyft-to/solana-defi/blob/main/PumpFun/Typescript/%5BGRPC%5DPumpfun_migration/index.ts
-
-// pump snipe : https://github.com/whistledev411/pumpfun-sniper/blob/master/src/index.ts
-
-// serial token creator ? : 8gJGq3JER74kGudebpQYBdHnuwEQMfe67K7jMPauFLeJ
-
-
-type Payload = {
+export type Payload = {
     method: string,
     keys?: string[],
 }
 
-type SubscribeResult = { message: string };
-type UnsubscribeResult = { message: string };
+export type SubscribeResult = { message: string };
+export type UnsubscribeResult = { message: string };
 
-type CreateTokenResult = {
+export type CreateTokenResult = {
     signature: string
     mint: string
     traderPublicKey: string
@@ -43,7 +33,7 @@ type CreateTokenResult = {
     pool: string
 }
 
-type TokenTradeResult = {
+export type TokenTradeResult = {
     signature: string
     mint: string
     traderPublicKey: string
@@ -58,13 +48,13 @@ type TokenTradeResult = {
     pool: string
 }
 
-type CreateWalletResult = {
+export type CreateWalletResult = {
     apiKey: string
     walletPublicKey: string
     privateKey: string
 };
 
-type RaydiumLiquidityResult = {
+export type RaydiumLiquidityResult = {
     signature: string
     mint: string
     txType: 'addLiquidity'
@@ -74,7 +64,7 @@ type RaydiumLiquidityResult = {
     pool: string
 }
 
-type CreateTokenOptions = {
+export type CreateTokenOptions = {
     name: string,
     imageFile?: string,
     symbol: string,
@@ -85,10 +75,12 @@ type CreateTokenOptions = {
     solAmount: number,
 }
 
-type SendPortalTransactionOptions = {
+export type SendPortalTransactionOptions = {
     tokenAddress: string,
     orderType: 'buy' | 'sell',
     amount: BigInt,
+    priorityFee?: number,
+    slippage?: number,
 }
 
 
@@ -97,78 +89,6 @@ type SendPortalTransactionOptions = {
 //const tokensTxCount: { [address: string]: number } = {};
 //const tradersTxCount: { [address: string]: number } = {};
 //const devsTokenCount: { [address: string]: number } = {};
-
-
-async function main() {
-    /*
-    const wss = new WebSocket('wss://prod-v2.nats.realtime.pump.fun/');
-
-    wss.on('message', (data: WebSocket.Data) => {
-        console.log('message:', data.toString())
-    })
-
-    wss.on('open', () => {
-        const message = '{"no_responders":true,"protocol":1,"verbose":false,"pedantic":false,"user":"subscriber","pass":"lW5a9y20NceF6AE9","lang":"nats.ws","version":"1.29.2","headers":true}';
-        wss.send(message);
-    })
-
-    return;
-    */
-
-    const ws = getPumpPortalWebsocket();
-
-    ws.on('open', function open() {
-        //subscribeNewToken(ws);
-        //setTimeout(() => unsubscribeNewToken(ws), 30_000);
-
-        //subscribeRaydiumLiquidity(ws);
-
-        //subscribeAccountTrade(ws, ['8gJGq3JER74kGudebpQYBdHnuwEQMfe67K7jMPauFLeJ']);
-        //setTimeout(() => unsubscribeAccountTrade(ws, ['8gJGq3JER74kGudebpQYBdHnuwEQMfe67K7jMPauFLeJ']), 10_000);
-
-        //subscribeTokenTrade(ws, ['6NThGw29gUYjyqpw49KbSDe8kfREtSAzJF3YmXP7pump']);
-        //setTimeout(() => unsubscribeTokenTrade(ws, ['6NThGw29gUYjyqpw49KbSDe8kfREtSAzJF3YmXP7pump']), 10_000);
-    });
-
-    ws.on('message', function message(data: WebSocket.Data) {
-        const message = JSON.parse(data.toString()) as CreateTokenResult | TokenTradeResult | RaydiumLiquidityResult;
-        console.log('message:', message)
-
-        if (message.txType === 'addLiquidity') {
-            onRadiumLiquidity(message);
-
-        } else if (message.txType === 'create') {
-            onNewToken(message);
-
-        } else if (message.txType === 'buy') {
-            onTokenTrade(message);
-
-        } else if (message.txType === 'sell') {
-            onTokenTrade(message);
-        }
-    });
-
-    // Gestion propre de CTRL+C
-    process.on('SIGINT', () => {
-        console.log("\nCTRL+C detected. Stopping websocket...");
-        ws.close();
-        process.exit(0); // Quitter proprement
-    });
-}
-
-
-
-function onNewToken(message: CreateTokenResult) {
-    
-}
-
-function onTokenTrade(message: TokenTradeResult) {
-    
-}
-
-function onRadiumLiquidity(message: RaydiumLiquidityResult) {
-    
-}
 
 
 
@@ -338,7 +258,7 @@ export async function createToken(connection: Connection, privateKey: string, wa
         const tx = VersionedTransaction.deserialize(new Uint8Array(data));
         tx.sign([mintKeypair, signerKeyPair]);
 
-        const signature = await connection.sendTransaction(tx)
+        const signature = await sendAndConfirmTransaction(connection, tx);
         console.log("Transaction: https://solscan.io/tx/" + signature);
 
     } else {
@@ -347,7 +267,7 @@ export async function createToken(connection: Connection, privateKey: string, wa
 }
 
 
-export async function sendPortalTransaction(connection: Connection, privateKey: string, walletAddress: string, options: SendPortalTransactionOptions) {
+export async function sendPumpTransaction(connection: Connection, privateKey: string, walletAddress: string, options: SendPortalTransactionOptions) {
     const response = await axios.post(`https://pumpportal.fun/api/trade-local`,
         JSON.stringify({
             "publicKey": walletAddress,  // Your wallet public key
@@ -355,8 +275,8 @@ export async function sendPortalTransaction(connection: Connection, privateKey: 
             "mint": options.tokenAddress,         // contract address of the token you want to trade
             "denominatedInSol": "false",     // "true" if amount is amount of SOL, "false" if amount is number of tokens
             "amount": options.amount.toString(),                  // amount of SOL or tokens
-            "slippage": 1,                   // percent slippage allowed
-            "priorityFee": 0.00001,          // priority fee
+            "slippage": options.slippage ?? 1,                   // percent slippage allowed
+            "priorityFee": options.priorityFee ?? 0.00001,          // priority fee
             "pool": "pump"                   // exchange to trade on. "pump" or "raydium"
         })
         , {
@@ -372,7 +292,7 @@ export async function sendPortalTransaction(connection: Connection, privateKey: 
         const signerKeyPair = Keypair.fromSecretKey(bs58.decode(privateKey));
         tx.sign([signerKeyPair]);
 
-        const signature = await connection.sendTransaction(tx)
+        const signature = await sendAndConfirmTransaction(connection, tx);
         console.log("Transaction: https://solscan.io/tx/" + signature);
 
     } else {
@@ -381,5 +301,4 @@ export async function sendPortalTransaction(connection: Connection, privateKey: 
 }
 
 
-main();
 
