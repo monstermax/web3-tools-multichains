@@ -9,7 +9,7 @@ import { SwapMode } from '@jup-ag/api';
 import { BlockchainProvider } from "./BlockchainProvider";
 import { getTransactionPriorityFeeEstimate } from './solana/solana';
 import { addTransactionFees, checkTransactionStatus, confirmTransaction, executeLegacyTransaction, sendTransaction } from './solana/transaction.utils';
-import { buildAndSignSwapTransaction, getJupiterClient, getQuoteApi, getSwapApi } from './solana/swap.jupiter';
+import { buildAndSignSwapTransaction, getJupiterClient, getQuoteApi, getSwapApi } from './solana/jupiter';
 
 
 

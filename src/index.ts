@@ -10,7 +10,7 @@ export { BitcoinBlockstreamProvider as BitcoinBlockstreamProvider } from './bloc
 
 export { SolanaProvider } from './blockchains/SolanaProvider';
 export * as solana from './blockchains/solana/solana';
-export * as solanaJupiterSwap from './blockchains/solana/swap.jupiter';
+export * as solanaJupiterSwap from './blockchains/solana/jupiter';
 export * as solanaTransaction from './blockchains/solana/transaction.utils';
 
 export { TonProvider } from './blockchains/TonProvider';
