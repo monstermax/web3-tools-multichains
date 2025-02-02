@@ -8,6 +8,7 @@ export * as solana from './blockchains/solana/solana';
 export * as solanaTransaction from './blockchains/solana/transaction.utils';
 export * as solanaJupiter from './blockchains/solana/jupiter';
 export * as solanaPumpfun from './blockchains/solana/pumpfun';
+export * as solanaRaydium from './blockchains/solana/raydium';
 export { TonProvider } from './blockchains/TonProvider';
 export { TronProvider } from './blockchains/TronProvider';
 export { CoinPriceProvider } from './tools/market/CoinPriceProvider';

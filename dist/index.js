@@ -1,4 +1,5 @@
 "use strict";
+// index.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -33,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TokenPriceProvider = exports.CoinPriceProvider = exports.TronProvider = exports.TonProvider = exports.solanaPumpfun = exports.solanaJupiter = exports.solanaTransaction = exports.solana = exports.SolanaProvider = exports.BitcoinBlockstreamProvider = exports.BitcoinCoreProvider = exports.EvmProvider = exports.getBlockchainProvider = exports.rpcDefault = void 0;
+exports.TokenPriceProvider = exports.CoinPriceProvider = exports.TronProvider = exports.TonProvider = exports.solanaRaydium = exports.solanaPumpfun = exports.solanaJupiter = exports.solanaTransaction = exports.solana = exports.SolanaProvider = exports.BitcoinBlockstreamProvider = exports.BitcoinCoreProvider = exports.EvmProvider = exports.getBlockchainProvider = exports.rpcDefault = void 0;
 var rpc_default_1 = require("./rpc.default");
 Object.defineProperty(exports, "rpcDefault", { enumerable: true, get: function () { return rpc_default_1.rpcDefault; } });
 var BlockchainProvider_1 = require("./blockchains/BlockchainProvider");
@@ -50,6 +51,7 @@ exports.solana = __importStar(require("./blockchains/solana/solana"));
 exports.solanaTransaction = __importStar(require("./blockchains/solana/transaction.utils"));
 exports.solanaJupiter = __importStar(require("./blockchains/solana/jupiter"));
 exports.solanaPumpfun = __importStar(require("./blockchains/solana/pumpfun"));
+exports.solanaRaydium = __importStar(require("./blockchains/solana/raydium"));
 var TonProvider_1 = require("./blockchains/TonProvider");
 Object.defineProperty(exports, "TonProvider", { enumerable: true, get: function () { return TonProvider_1.TonProvider; } });
 var TronProvider_1 = require("./blockchains/TronProvider");
