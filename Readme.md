@@ -384,7 +384,7 @@ swapTokenToETH();
 
 
 
-## Available imports
+## 📜 Liste des imports disponibles
 
 ```ts
 export { rpcDefault } from './rpc.default';
@@ -412,7 +412,7 @@ export { TokenPriceProvider } from './tools/defi/TokenPriceProvider';
 ```
 
 
-## Methodes BlockchainProvider
+## 📌 API - Méthodes BlockchainProvider
 
 ```ts
 export interface BlockchainProvider {
@@ -437,4 +437,14 @@ export interface BlockchainProvider {
     swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage?: number, swapMode?: string): Promise<string>
 }
 ```
+
+
+
+## 📢 **Contribution & Support**
+💡 **Les contributions sont les bienvenues !**  
+- Ouvrez une issue ou une pull request pour proposer des améliorations.  
+- Rejoignez la discussion pour partager vos idées.  
+
+📩 **Besoin d'aide ?** Contactez-nous sur [GitHub Issues](https://github.com/monstermax/web3-tools-multichains/issues).
+
 
