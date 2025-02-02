@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getMarketCapFromBondingCurve = exports.getBondingCurveReserves = void 0;
 exports.getPumpPortalWebsocket = getPumpPortalWebsocket;
 exports.subscribeNewToken = subscribeNewToken;
 exports.unsubscribeNewToken = unsubscribeNewToken;
@@ -199,4 +200,55 @@ function sendPumpTransaction(connection, wallet, walletAddress, options) {
         }
     });
 }
+// 🟢 Fonction pour récupérer les réserves du contrat de la Bonding Curve
+const getBondingCurveReserves = (connection, bondingCurveAddress) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const bondingCurvePublicKey = new web3_js_1.PublicKey(bondingCurveAddress);
+        // 🔹 Récupérer l'état du compte du smart contract
+        const accountInfo = yield connection.getParsedAccountInfo(bondingCurvePublicKey);
+        if (!accountInfo || !accountInfo.value || !accountInfo.value.data) {
+            console.warn(`⚠️ Impossible de récupérer les réserves pour ${bondingCurveAddress}`);
+            return null;
+        }
+        // 🔹 Décoder les données du smart contract (la structure dépend du programme Pump.fun)
+        const parsedData = accountInfo.value.data;
+        if (!parsedData.parsed || !parsedData.parsed.info) {
+            console.warn(`⚠️ Données du compte non parsables pour ${bondingCurveAddress}`);
+            return null;
+        }
+        // 🔹 Extraction des valeurs (Hypothèse : on connaît la structure des données)
+        //const solReserve = Number(data.readBigUInt64LE(0) / BigInt(1e9));  // SOL en lamports
+        //const tokenReserve = Number(data.readBigUInt64LE(8));       // Nombre de tokens dans la Bonding Curve
+        const solReserve = parsedData.parsed.info.solReserve / 1e9; // Convertir lamports -> SOL
+        const tokenReserve = parsedData.parsed.info.tokenReserve; // Nombre de tokens en réserve
+        return { solReserve, tokenReserve };
+    }
+    catch (error) {
+        console.error(`❌ Erreur lors de la récupération des réserves de la Bonding Curve pour ${bondingCurveAddress}:`, error);
+        return null;
+    }
+});
+exports.getBondingCurveReserves = getBondingCurveReserves;
+const getMarketCapFromBondingCurve = (connection, bondingCurveAddress, totalSupply) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const reserves = yield (0, exports.getBondingCurveReserves)(connection, bondingCurveAddress);
+        if (!reserves)
+            return null;
+        const { solReserve, tokenReserve } = reserves;
+        // 🔹 Calcul du prix du token en SOL
+        const priceInSol = solReserve / tokenReserve;
+        if (!priceInSol || isNaN(priceInSol)) {
+            console.warn(`⚠️ Prix en SOL invalide pour ${bondingCurveAddress}`);
+            return null;
+        }
+        // 🔹 Calcul du Market Cap
+        const marketCap = totalSupply * priceInSol;
+        return marketCap;
+    }
+    catch (error) {
+        console.error(`❌ Erreur lors du calcul du Market Cap depuis la Bonding Curve:`, error);
+        return null;
+    }
+});
+exports.getMarketCapFromBondingCurve = getMarketCapFromBondingCurve;
 //# sourceMappingURL=pumpfun.js.map

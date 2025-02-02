@@ -15,7 +15,7 @@ export declare class SolanaProvider implements BlockchainProvider {
     getWrappedTokenUsdPair(): string;
     getTokenBalance<T extends boolean>(address: string, baseTokenddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint>;
     private parseTokenBalance;
-    getTokenPrice(tokenAddress: string, inverseAssets?: boolean): Promise<number>;
+    getTokenPrice(tokenAddress: string): Promise<number>;
     getTokensPairPrice(pairAddress: string, inverseAssets?: boolean): Promise<number>;
     private getTokenDecimals;
     swapTokens(inputMint: string, outputMint: string, amount: bigint, slippageBps?: number, swapMode?: SwapMode): Promise<string>;

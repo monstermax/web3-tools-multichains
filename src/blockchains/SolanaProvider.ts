@@ -133,7 +133,7 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getTokenPrice(tokenAddress: string, inverseAssets = false): Promise<number> {
+    async getTokenPrice(tokenAddress: string): Promise<number> {
         //   const url = `https://defi.shyft.to/v0/pools/get_by_pair?tokenA=${address}&tokenB=sol`;
 
         const jupiterApi = getJupiterClient();
@@ -144,7 +144,7 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getTokensPairPrice(pairAddress: string, inverseAssets = false): Promise<number> {
+    async getTokensPairPrice(pairAddress: string, inverseAssets=false): Promise<number> {
         const lpPublicKey = new PublicKey(pairAddress);
         const accountInfo = await this.connection.getAccountInfo(lpPublicKey);
 

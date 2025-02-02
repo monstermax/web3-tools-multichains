@@ -110,8 +110,8 @@ class SolanaProvider {
     parseTokenBalance(data) {
         return Number(data.readBigUInt64LE(64)); // Position pour la balance
     }
-    getTokenPrice(tokenAddress_1) {
-        return __awaiter(this, arguments, void 0, function* (tokenAddress, inverseAssets = false) {
+    getTokenPrice(tokenAddress) {
+        return __awaiter(this, void 0, void 0, function* () {
             //   const url = `https://defi.shyft.to/v0/pools/get_by_pair?tokenA=${address}&tokenB=sol`;
             const jupiterApi = (0, jupiter_1.getJupiterClient)();
             const outputMint = this.getWrappedToken();

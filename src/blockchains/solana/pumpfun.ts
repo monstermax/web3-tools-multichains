@@ -4,7 +4,7 @@ import fs from "fs";
 import axios from "axios";
 import WebSocket from "ws";
 import bs58 from "bs58";
-import { Connection, Keypair, VersionedTransaction } from "@solana/web3.js";
+import { Connection, Keypair, ParsedAccountData, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { sendAndConfirmTransaction } from "./transaction.utils";
 
 
@@ -306,4 +306,65 @@ export async function sendPumpTransaction(connection: Connection, wallet: Keypai
 }
 
 
+
+// 🟢 Fonction pour récupérer les réserves du contrat de la Bonding Curve
+export const getBondingCurveReserves = async (connection: Connection, bondingCurveAddress: string): Promise<{ solReserve: number, tokenReserve: number } | null> => {
+    try {
+        const bondingCurvePublicKey = new PublicKey(bondingCurveAddress);
+
+        // 🔹 Récupérer l'état du compte du smart contract
+        const accountInfo = await connection.getParsedAccountInfo(bondingCurvePublicKey);
+
+        if (!accountInfo || !accountInfo.value || !accountInfo.value.data) {
+            console.warn(`⚠️ Impossible de récupérer les réserves pour ${bondingCurveAddress}`);
+            return null;
+        }
+
+        // 🔹 Décoder les données du smart contract (la structure dépend du programme Pump.fun)
+        const parsedData = accountInfo.value.data as ParsedAccountData;
+
+        if (!parsedData.parsed || !parsedData.parsed.info) {
+            console.warn(`⚠️ Données du compte non parsables pour ${bondingCurveAddress}`);
+            return null;
+        }
+
+        // 🔹 Extraction des valeurs (Hypothèse : on connaît la structure des données)
+        //const solReserve = Number(data.readBigUInt64LE(0) / BigInt(1e9));  // SOL en lamports
+        //const tokenReserve = Number(data.readBigUInt64LE(8));       // Nombre de tokens dans la Bonding Curve
+
+        const solReserve = parsedData.parsed.info.solReserve / 1e9;  // Convertir lamports -> SOL
+        const tokenReserve = parsedData.parsed.info.tokenReserve;    // Nombre de tokens en réserve
+
+        return { solReserve, tokenReserve };
+
+    } catch (error) {
+        console.error(`❌ Erreur lors de la récupération des réserves de la Bonding Curve pour ${bondingCurveAddress}:`, error);
+        return null;
+    }
+};
+
+
+export const getMarketCapFromBondingCurve = async (connection: Connection, bondingCurveAddress: string, totalSupply: number): Promise<number | null> => {
+    try {
+        const reserves = await getBondingCurveReserves(connection, bondingCurveAddress);
+        if (!reserves) return null;
+
+        const { solReserve, tokenReserve } = reserves;
+
+        // 🔹 Calcul du prix du token en SOL
+        const priceInSol = solReserve / tokenReserve;
+        if (!priceInSol || isNaN(priceInSol)) {
+            console.warn(`⚠️ Prix en SOL invalide pour ${bondingCurveAddress}`);
+            return null;
+        }
+
+        // 🔹 Calcul du Market Cap
+        const marketCap = totalSupply * priceInSol;
+        return marketCap;
+
+    } catch (error) {
+        console.error(`❌ Erreur lors du calcul du Market Cap depuis la Bonding Curve:`, error);
+        return null;
+    }
+};
 

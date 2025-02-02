@@ -215,7 +215,7 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async getTokensPairPrice(pairAddress: string, inverseAssets = false): Promise<number> {
+    async getTokensPairPrice(pairAddress: string, inverseAssets=false): Promise<number> {
         // Exemple avec un pool Uniswap V2
         const lpContract = new Contract(pairAddress, LP_ABI, this.connection);
 

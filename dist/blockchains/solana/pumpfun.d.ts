@@ -83,3 +83,8 @@ export declare function unsubscribeRaydiumLiquidity(ws: WebSocket): void;
 export declare function createWallet(): Promise<CreateWalletResult>;
 export declare function createToken(connection: Connection, privateKey: string, walletAddress: string, options: CreateTokenOptions): Promise<void>;
 export declare function sendPumpTransaction(connection: Connection, wallet: Keypair, walletAddress: string, options: SendPortalTransactionOptions): Promise<string>;
+export declare const getBondingCurveReserves: (connection: Connection, bondingCurveAddress: string) => Promise<{
+    solReserve: number;
+    tokenReserve: number;
+} | null>;
+export declare const getMarketCapFromBondingCurve: (connection: Connection, bondingCurveAddress: string, totalSupply: number) => Promise<number | null>;
