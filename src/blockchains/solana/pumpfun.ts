@@ -78,7 +78,7 @@ export type CreateTokenOptions = {
 export type SendPortalTransactionOptions = {
     tokenAddress: string,
     orderType: 'buy' | 'sell',
-    amount: BigInt,
+    amount: string | BigInt | number,
     priorityFee?: number,
     slippage?: number,
 }
@@ -267,36 +267,41 @@ export async function createToken(connection: Connection, privateKey: string, wa
 }
 
 
-export async function sendPumpTransaction(connection: Connection, privateKey: string, walletAddress: string, options: SendPortalTransactionOptions) {
-    const response = await axios.post(`https://pumpportal.fun/api/trade-local`,
-        JSON.stringify({
-            "publicKey": walletAddress,  // Your wallet public key
-            "action": options.orderType,                 // "buy" or "sell"
-            "mint": options.tokenAddress,         // contract address of the token you want to trade
-            "denominatedInSol": "false",     // "true" if amount is amount of SOL, "false" if amount is number of tokens
-            "amount": options.amount.toString(),                  // amount of SOL or tokens
-            "slippage": options.slippage ?? 1,                   // percent slippage allowed
-            "priorityFee": options.priorityFee ?? 0.00001,          // priority fee
-            "pool": "pump"                   // exchange to trade on. "pump" or "raydium"
-        })
-        , {
+export async function sendPumpTransaction(connection: Connection, wallet: Keypair, walletAddress: string, options: SendPortalTransactionOptions): Promise<string> {
+    const req = {
+        "action": options.orderType,                 // "buy" or "sell"
+        "mint": options.tokenAddress,         // contract address of the token you want to trade
+        "publicKey": walletAddress,  // Your wallet public key
+        "denominatedInSol": "true",     // "true" if amount is amount of SOL, "false" if amount is number of tokens
+        "amount": options.amount.toString(),                  // amount of SOL or tokens
+        "slippage": options.slippage ?? 10,                   // percent slippage allowed
+        "priorityFee": options.priorityFee ?? 0.00001,          // priority fee
+        "pool": "pump"                   // exchange to trade on. "pump" or "raydium"
+    };
+
+    const response = await fetch(`https://pumpportal.fun/api/trade-local`,
+        {
+            method: 'POST',
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            body: JSON.stringify(req)
         });
 
     if (response.status === 200) { // successfully generated transaction
-        const data = response.data;
+        const data = await response.arrayBuffer();
 
         const tx = VersionedTransaction.deserialize(new Uint8Array(data));
-        const signerKeyPair = Keypair.fromSecretKey(bs58.decode(privateKey));
-        tx.sign([signerKeyPair]);
+        tx.sign([wallet]);
 
         const signature = await sendAndConfirmTransaction(connection, tx);
         console.log("Transaction: https://solscan.io/tx/" + signature);
 
+        return signature;
+
     } else {
         console.log(response.statusText); // log error
+        throw new Error(`transaction error. ${response.statusText}`)
     }
 }
 

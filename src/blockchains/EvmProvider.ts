@@ -132,11 +132,16 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getWallet(): Promise<Wallet | null> {
+        return this.signer;
+    }
+
+
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         const balance = await this.connection.getBalance(address);
 
         if (!formatDecimals) {
-            return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+            return BigInt(balance) as bigint as T extends true ? never : bigint;
         }
 
         return parseFloat(formatEther(balance)) as T extends true ? number : never; // Conversion en ETH
@@ -187,7 +192,7 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         const contract = new Contract(tokenAddress, erc20Abi, this.connection);
 
         const [rawBalance, decimals] = await Promise.all([
@@ -196,7 +201,7 @@ export class EvmProvider implements BlockchainProvider {
         ]);
 
         if (!formatDecimals) {
-            return BigInt(rawBalance) as BigInt as T extends true ? never : BigInt;
+            return BigInt(rawBalance) as bigint as T extends true ? never : bigint;
         }
 
         // Convertir en unité lisible
@@ -241,7 +246,7 @@ export class EvmProvider implements BlockchainProvider {
     }
 
 
-    async swapTokens(buyToken: string, sellToken: string, amountIn: number, slippage: number, swapMode: string): Promise<string> {
+    async swapTokens(buyToken: string, sellToken: string, amountIn: bigint, slippage: number, swapMode: string): Promise<string> {
         const routerAddress = dexesRouters[this.chainName];
 
         if (!routerAddress) {

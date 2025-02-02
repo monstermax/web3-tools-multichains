@@ -29,6 +29,11 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
+    async getWallet(): Promise<Keypair | null> {
+        return this.signer;
+    }
+
+
     async getWalletAddress(): Promise<string> {
         if (!this.signer) {
             throw new Error(`missing signer`);
@@ -38,13 +43,13 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         const publicKey = new PublicKey(address);
 
         const balance = await this.connection.getBalance(publicKey);
 
         if (!formatDecimals) {
-            return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+            return BigInt(balance) as bigint as T extends true ? never : bigint;
         }
 
         return balance / 1e9 as T extends true ? number : never; // Convert lamports to SOL
@@ -85,7 +90,7 @@ export class SolanaProvider implements BlockchainProvider {
     }
 
 
-    async getTokenBalance<T extends boolean>(address: string, baseTokenddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getTokenBalance<T extends boolean>(address: string, baseTokenddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         const walletPublicKey = new PublicKey(address);
         const tokenMintPublicKey = new PublicKey(baseTokenddress);
 
@@ -107,7 +112,7 @@ export class SolanaProvider implements BlockchainProvider {
             const balance = this.parseTokenBalance(accountData);
 
             if (!formatDecimals) {
-                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+                return BigInt(balance) as bigint as T extends true ? never : bigint;
             }
 
             // Récupérer les informations sur le mint pour obtenir les décimales
@@ -202,7 +207,7 @@ export class SolanaProvider implements BlockchainProvider {
 
 
     // Effectue un swap entre deux tokens via l'API Jupiter
-    async swapTokens(inputMint: string, outputMint: string, amount: number, slippageBps: number=100, swapMode: SwapMode="ExactIn"): Promise<string> {
+    async swapTokens(inputMint: string, outputMint: string, amount: bigint, slippageBps: number=100, swapMode: SwapMode="ExactIn"): Promise<string> {
         if (!this.signer) {
             throw new Error(`missing signer`);
         }
@@ -210,7 +215,7 @@ export class SolanaProvider implements BlockchainProvider {
         const jupiterApi = getJupiterClient();
 
         // Quote
-        const quote = await getQuoteApi(jupiterApi, inputMint, outputMint, amount, slippageBps, swapMode);
+        const quote = await getQuoteApi(jupiterApi, inputMint, outputMint, Number(amount), slippageBps, swapMode);
         if (! quote) throw new Error(`no quote available`);
 
         const latestBlockhash = await this.connection.getLatestBlockhash('confirmed');

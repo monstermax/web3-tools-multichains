@@ -61,6 +61,11 @@ class TronProvider {
     getConnection() {
         return this.connection;
     }
+    getWallet() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.signer;
+        });
+    }
     getWalletAddress() {
         return __awaiter(this, void 0, void 0, function* () {
             try {

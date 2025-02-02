@@ -29,6 +29,11 @@ class SolanaProvider {
     getConnection() {
         return this.connection;
     }
+    getWallet() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.signer;
+        });
+    }
     getWalletAddress() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.signer) {
@@ -173,7 +178,7 @@ class SolanaProvider {
             }
             const jupiterApi = (0, jupiter_1.getJupiterClient)();
             // Quote
-            const quote = yield (0, jupiter_1.getQuoteApi)(jupiterApi, inputMint, outputMint, amount, slippageBps, swapMode);
+            const quote = yield (0, jupiter_1.getQuoteApi)(jupiterApi, inputMint, outputMint, Number(amount), slippageBps, swapMode);
             if (!quote)
                 throw new Error(`no quote available`);
             const latestBlockhash = yield this.connection.getLatestBlockhash('confirmed');

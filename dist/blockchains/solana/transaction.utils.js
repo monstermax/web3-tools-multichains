@@ -141,7 +141,8 @@ function sendAndConfirmTransaction(connection, tx) {
             yield new Promise((resolve) => setTimeout(resolve, 10000));
         }
         console.log("   ❌ - Transaction not confirmed.");
-        return signature;
+        //return signature;
+        throw new Error(`Transaction ${signature} not confirmed`);
     });
 }
 function addTransactionFees(connection, wallet, transaction, priorityFeeMicroLamports) {

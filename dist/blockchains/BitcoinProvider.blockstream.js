@@ -66,6 +66,11 @@ class BitcoinBlockstreamProvider {
     getConnection() {
         return null;
     }
+    getWallet() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return null; // TODO
+        });
+    }
     getWalletAddress() {
         return __awaiter(this, void 0, void 0, function* () {
             return ''; // TODO

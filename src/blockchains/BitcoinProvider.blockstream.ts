@@ -30,13 +30,18 @@ export class BitcoinBlockstreamProvider implements BlockchainProvider {
     }
 
 
+    async getWallet(): Promise<null> {
+        return null; // TODO
+    }
+
+
     async getWalletAddress(): Promise<string> {
         return ''; // TODO
     }
 
 
     // Récupérer la balance d'une adresse Bitcoin
-    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         try {
             const response = await axios.get(`${this.rpcUrl}/address/${address}`);
             //console.log("data:", response.data); // Afficher les données pour déboguer si nécessaire
@@ -47,7 +52,7 @@ export class BitcoinBlockstreamProvider implements BlockchainProvider {
             const balanceInSatoshis = funded - spent;
 
             if (! formatDecimals) {
-                return BigInt(balanceInSatoshis) as BigInt as T extends true ? never : BigInt;
+                return BigInt(balanceInSatoshis) as bigint as T extends true ? never : bigint;
             }
 
             return balanceInSatoshis / 1e8 as T extends true ? number : never; // Convertir en BTC
@@ -153,7 +158,7 @@ export class BitcoinBlockstreamProvider implements BlockchainProvider {
 
 
     // Non applicable pour Bitcoin natif (remplissage minimal pour respecter l'interface)
-    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         console.warn("Tokens are not supported on Bitcoin natively.");
         return 0 as T extends true ? number : never;
     }
@@ -170,7 +175,7 @@ export class BitcoinBlockstreamProvider implements BlockchainProvider {
     }
 
 
-    async swapTokens(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: string): Promise<string> {
+    async swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage: number, swapMode: string): Promise<string> {
         return '';
     }
 }

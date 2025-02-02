@@ -33,15 +33,16 @@ export type TronProviderOptions = {
 export type BlockchainProviderReturn<chainName extends ChainName> = chainName extends 'bitcoin' ? BitcoinBlockstreamProvider : chainName extends 'ethereum' ? EvmProvider : chainName extends 'solana' ? SolanaProvider : chainName extends 'ton' ? TonProvider : chainName extends 'tron' ? TronProvider : never;
 export interface BlockchainProvider {
     getConnection(): any;
+    getWallet(): Promise<any | null>;
     getWalletAddress(): Promise<string>;
-    getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt>;
+    getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint>;
     executeTransaction(to: string, value: string, data?: string): Promise<string>;
     getTransactionStatus(txHash: string): Promise<string>;
     getWrappedToken(): string;
     getWrappedTokenUsdPair(): string;
-    getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt>;
+    getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint>;
     getTokenPrice(tokenAddress: string): Promise<number>;
     getTokensPairPrice(pairAddress: string): Promise<number>;
-    swapTokens(inputMint: string, outputMint: string, amount: number, slippage?: number, swapMode?: string): Promise<string>;
+    swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage?: number, swapMode?: string): Promise<string>;
 }
 export declare function getBlockchainProvider<chainName extends ChainName>(chainName: chainName, options?: BlockchainProviderOptions<chainName>): BlockchainProviderReturn<chainName>;

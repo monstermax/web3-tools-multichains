@@ -23,18 +23,23 @@ export class BitcoinCoreProvider implements BlockchainProvider {
     }
 
 
+    async getWallet(): Promise<null> {
+        return null; // TODO
+    }
+
+
     async getWalletAddress(): Promise<string> {
         return ''; // TODO
     }
 
 
     // Récupérer la balance d'une adresse en BTC
-    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         try {
             const balance = await this.connection.command("getreceivedbyaddress", address); // or getbalance
 
             if (! formatDecimals) {
-                return BigInt(balance * 1e8) as BigInt as T extends true ? never : BigInt;
+                return BigInt(balance * 1e8) as bigint as T extends true ? never : bigint;
             }
 
             return balance; // Balance en BTC
@@ -76,7 +81,7 @@ export class BitcoinCoreProvider implements BlockchainProvider {
 
 
     // Les tokens ne sont pas natifs à Bitcoin
-    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         console.warn("Tokens are not supported on Bitcoin natively.");
         return 0 as T extends true ? number : never;
     }
@@ -94,7 +99,7 @@ export class BitcoinCoreProvider implements BlockchainProvider {
     }
 
 
-    async swapTokens(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: string): Promise<string> {
+    async swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage: number, swapMode: string): Promise<string> {
         console.warn("Tokens are not supported on Bitcoin natively.");
         return '';
     }

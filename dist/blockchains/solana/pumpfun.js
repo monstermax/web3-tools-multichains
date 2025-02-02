@@ -165,33 +165,37 @@ function createToken(connection, privateKey, walletAddress, options) {
         }
     });
 }
-function sendPumpTransaction(connection, privateKey, walletAddress, options) {
+function sendPumpTransaction(connection, wallet, walletAddress, options) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
-        const response = yield axios_1.default.post(`https://pumpportal.fun/api/trade-local`, JSON.stringify({
-            "publicKey": walletAddress, // Your wallet public key
+        const req = {
             "action": options.orderType, // "buy" or "sell"
             "mint": options.tokenAddress, // contract address of the token you want to trade
-            "denominatedInSol": "false", // "true" if amount is amount of SOL, "false" if amount is number of tokens
+            "publicKey": walletAddress, // Your wallet public key
+            "denominatedInSol": "true", // "true" if amount is amount of SOL, "false" if amount is number of tokens
             "amount": options.amount.toString(), // amount of SOL or tokens
-            "slippage": (_a = options.slippage) !== null && _a !== void 0 ? _a : 1, // percent slippage allowed
+            "slippage": (_a = options.slippage) !== null && _a !== void 0 ? _a : 10, // percent slippage allowed
             "priorityFee": (_b = options.priorityFee) !== null && _b !== void 0 ? _b : 0.00001, // priority fee
             "pool": "pump" // exchange to trade on. "pump" or "raydium"
-        }), {
+        };
+        const response = yield fetch(`https://pumpportal.fun/api/trade-local`, {
+            method: 'POST',
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            body: JSON.stringify(req)
         });
         if (response.status === 200) { // successfully generated transaction
-            const data = response.data;
+            const data = yield response.arrayBuffer();
             const tx = web3_js_1.VersionedTransaction.deserialize(new Uint8Array(data));
-            const signerKeyPair = web3_js_1.Keypair.fromSecretKey(bs58_1.default.decode(privateKey));
-            tx.sign([signerKeyPair]);
+            tx.sign([wallet]);
             const signature = yield (0, transaction_utils_1.sendAndConfirmTransaction)(connection, tx);
             console.log("Transaction: https://solscan.io/tx/" + signature);
+            return signature;
         }
         else {
             console.log(response.statusText); // log error
+            throw new Error(`transaction error. ${response.statusText}`);
         }
     });
 }

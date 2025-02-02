@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { Connection } from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
 export type Payload = {
     method: string;
     keys?: string[];
@@ -67,7 +67,7 @@ export type CreateTokenOptions = {
 export type SendPortalTransactionOptions = {
     tokenAddress: string;
     orderType: 'buy' | 'sell';
-    amount: BigInt;
+    amount: string | BigInt | number;
     priorityFee?: number;
     slippage?: number;
 };
@@ -82,4 +82,4 @@ export declare function subscribeRaydiumLiquidity(ws: WebSocket): void;
 export declare function unsubscribeRaydiumLiquidity(ws: WebSocket): void;
 export declare function createWallet(): Promise<CreateWalletResult>;
 export declare function createToken(connection: Connection, privateKey: string, walletAddress: string, options: CreateTokenOptions): Promise<void>;
-export declare function sendPumpTransaction(connection: Connection, privateKey: string, walletAddress: string, options: SendPortalTransactionOptions): Promise<void>;
+export declare function sendPumpTransaction(connection: Connection, wallet: Keypair, walletAddress: string, options: SendPortalTransactionOptions): Promise<string>;

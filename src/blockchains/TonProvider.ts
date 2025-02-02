@@ -52,6 +52,11 @@ export class TonProvider implements BlockchainProvider {
     }
 
 
+    async getWallet(): Promise<WalletV3ContractR2 | null> {
+        return this.signer;
+    }
+
+
     async getWalletAddress(): Promise<string> {
         try {
             if (!this.signer) {
@@ -69,13 +74,13 @@ export class TonProvider implements BlockchainProvider {
 
 
     // Obtenir le solde d'une adresse TON
-    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         try {
             const wallet = this.connection.wallet.create({ address });
             const balance = await this.connection.getBalance(wallet.address ?? '');
 
             if (!formatDecimals) {
-                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+                return BigInt(balance) as bigint as T extends true ? never : bigint;
             }
 
             return Number(balance) / 1e9 as T extends true ? number : never; // Convertir en TON
@@ -146,7 +151,7 @@ export class TonProvider implements BlockchainProvider {
 
 
     // Méthode pour récupérer le solde d'un token TIP-3
-    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         try {
             const result = await this.connection.provider.call2(
                 tokenAddress,  // Adresse du contrat
@@ -157,7 +162,7 @@ export class TonProvider implements BlockchainProvider {
             const balance = parseInt(result.stack[0][1], 10);
 
             if (! formatDecimals) {
-                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+                return BigInt(balance) as bigint as T extends true ? never : bigint;
             }
 
             return balance / 1e9 as T extends true ? number : never;
@@ -201,7 +206,7 @@ export class TonProvider implements BlockchainProvider {
     }
 
 
-    async swapTokens(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: string): Promise<string> {
+    async swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage: number, swapMode: string): Promise<string> {
         return ''; // TODO
     }
 }

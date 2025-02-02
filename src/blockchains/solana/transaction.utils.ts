@@ -158,7 +158,9 @@ export async function sendAndConfirmTransaction(connection: Connection, tx: Vers
     }
 
     console.log("   ❌ - Transaction not confirmed.");
-    return signature;
+    //return signature;
+
+    throw new Error(`Transaction ${signature} not confirmed`)
 }
 
 

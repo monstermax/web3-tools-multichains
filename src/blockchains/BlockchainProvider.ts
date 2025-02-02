@@ -72,8 +72,9 @@ export interface BlockchainProvider {
 
     // Wallets/Accounts
     //formatPrice(decimals?: number): string;
+    getWallet(): Promise<any | null>;
     getWalletAddress(): Promise<string>;
-    getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt>;
+    getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint>;
 
     // Transactions
     executeTransaction(to: string, value: string, data?: string): Promise<string>;
@@ -82,10 +83,10 @@ export interface BlockchainProvider {
     // Defi
     getWrappedToken(): string;
     getWrappedTokenUsdPair(): string;
-    getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt>;
+    getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint>;
     getTokenPrice(tokenAddress: string): Promise<number>;
     getTokensPairPrice(pairAddress: string): Promise<number>;
-    swapTokens(inputMint: string, outputMint: string, amount: number, slippage?: number, swapMode?: string): Promise<string>
+    swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage?: number, swapMode?: string): Promise<string>
 }
 
 

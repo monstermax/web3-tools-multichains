@@ -112,6 +112,11 @@ class EvmProvider {
             return ((_a = this.signer) === null || _a === void 0 ? void 0 : _a.address) || '';
         });
     }
+    getWallet() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.signer;
+        });
+    }
     getBalance(address, formatDecimals) {
         return __awaiter(this, void 0, void 0, function* () {
             const balance = yield this.connection.getBalance(address);

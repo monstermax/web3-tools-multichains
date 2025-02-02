@@ -65,6 +65,11 @@ export class TronProvider implements BlockchainProvider {
     }
 
 
+    async getWallet(): Promise<string | null> {
+        return this.signer;
+    }
+
+
     async getWalletAddress(): Promise<string> {
         try {
             if (!this.signer) {
@@ -79,12 +84,12 @@ export class TronProvider implements BlockchainProvider {
 
 
     // Obtenir le solde TRX d'une adresse
-    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getBalance<T extends boolean>(address: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         try {
             const balance = await this.connection.trx.getBalance(address);
 
             if (!formatDecimals) {
-                return BigInt(balance) as BigInt as T extends true ? never : BigInt;
+                return BigInt(balance) as bigint as T extends true ? never : bigint;
             }
 
             return balance / 1e6 as T extends true ? number : never; // Convertir en TRX (6 décimales)
@@ -156,14 +161,14 @@ export class TronProvider implements BlockchainProvider {
 
 
     // Obtenir la balance TRC-20 d'une adresse pour un token donné
-    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : BigInt> {
+    async getTokenBalance<T extends boolean>(address: string, tokenAddress: string, formatDecimals?: T): Promise<T extends true ? number : bigint> {
         try {
             const contract = await this.connection.contract().at(tokenAddress);
             const decimals = await contract.decimals().call();
             const rawBalance = await contract.balanceOf(address).call();
 
             if (! formatDecimals) {
-                return BigInt(rawBalance) as BigInt as T extends true ? never : BigInt;
+                return BigInt(rawBalance) as bigint as T extends true ? never : bigint;
             }
 
             return parseFloat(rawBalance) / Math.pow(10, decimals) as T extends true ? number : never;
@@ -228,7 +233,7 @@ export class TronProvider implements BlockchainProvider {
     }
 
 
-    async swapTokens(inputMint: string, outputMint: string, amount: number, slippage: number, swapMode: string): Promise<string> {
+    async swapTokens(inputMint: string, outputMint: string, amount: bigint, slippage: number, swapMode: string): Promise<string> {
         return ''; // TODO
     }
 }
